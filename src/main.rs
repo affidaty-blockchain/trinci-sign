@@ -1,9 +1,8 @@
 use clap::{Arg, Command};
-use serde_value::value;
 use trinci_core::{
     base::{
         schema::{SignedTransaction, TransactionData},
-        serialize::rmp_serialize,
+        serialize::{rmp_serialize, MessagePack},
     },
     crypto::{
         ecdsa::{CurveId, KeyPair as EcdsaKeyPair},
@@ -95,11 +94,7 @@ fn create_unit_tx(input_args: Arguments) -> Result<()> {
             let contract = if input_args.contract.is_empty() {
                 None
             } else {
-                Hash::new(
-                    trinci_core::crypto::HashAlgorithm::Sha256,
-                    &bs58_into_vec(&input_args.contract)?,
-                )
-                .ok()
+                Hash::from_hex(&input_args.contract).ok()
             };
 
             let private_bytes = bs58_into_vec(&input_args.private_key)?;
@@ -107,12 +102,11 @@ fn create_unit_tx(input_args: Arguments) -> Result<()> {
 
             let kp = EcdsaKeyPair::new(CurveId::Secp384R1, &private_bytes, &public_bytes)?;
 
-            let data_args = value!(input_args.args);
-            let args = rmp_serialize(&data_args)?;
+            let args = rmp_serialize(&input_args.args)?;
 
             let nonce = bs58_into_vec(&input_args.nonce)?;
 
-            let data = TransactionData::V1(TransactionDataV1 {
+            let data = TransactionDataV1 {
                 account: input_args.target,
                 fuel_limit: input_args.fuel,
                 nonce,
@@ -121,10 +115,11 @@ fn create_unit_tx(input_args: Arguments) -> Result<()> {
                 method: input_args.method,
                 caller: trinci_core::PublicKey::Ecdsa(kp.public_key()),
                 args,
-            });
+            };
 
-            // TODO
-            let signature = data.sign(&KeyPair::Ecdsa(kp))?;
+            let data = TransactionData::V1(data);
+            let bytes = data.serialize();
+            let signature = KeyPair::Ecdsa(kp).sign(&bytes)?;
 
             let sign_tx = SignedTransaction { data, signature };
 
@@ -132,7 +127,6 @@ fn create_unit_tx(input_args: Arguments) -> Result<()> {
 
             let message = Message::PutTransactionRequest { confirm: true, tx };
 
-            // TODO
             // Message pack of the transaction and save as .bin
             let buf = rmp_serialize(&message)?;
 
@@ -158,6 +152,3 @@ fn main() {
         None => println!("Arguments error!"),
     }
 }
-
-#[cfg(test)]
-mod tests {}

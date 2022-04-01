@@ -203,9 +203,9 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "clap"
-version = "3.1.6"
+version = "3.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8c93436c21e4698bacadf42917db28b23017027a4deccb35dbe47a7e7840123"
+checksum = "71c47df61d9e16dc010b55dba1952a57d8c215dbb533fd13cdd13369aac73b1c"
 dependencies = [
  "atty",
  "bitflags",
@@ -942,8 +942,8 @@ checksum = "b1141d4d61095b28419e22cb0bbf02755f5e54e0526f97f1e3d1d160e60885fb"
 
 [[package]]
 name = "trinci-core"
-version = "0.2.7-rc2"
-source = "git+https://ignore:icnAD-JTWci6TqfroMP7@gitlab.affidaty.net/developer2/trinci-github/trinci-core.git?branch=develop#39ab1195b412052f713b1a0369e30f19207ec0b3"
+version = "0.2.7-rc1"
+source = "git+https://github.com/affidaty-blockchain/trinci-core#8f6d86cadbd93bc44c2546d57dd212a9178a426e"
 dependencies = [
  "async-std",
  "bitflags",

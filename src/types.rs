@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_value::Value;
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 pub struct AppCommand {
@@ -18,7 +19,7 @@ pub struct UnitTxArgs {
     pub fuel: u64,
     pub contract: String,
     pub method: String,
-    pub args: String,
+    pub args: Value,
     pub public_key: String,  // base58 of a bytes array
     pub private_key: String, // base58 of a bytes array
 }
@@ -69,7 +70,7 @@ mod tests {
             fuel: 10000u64,
             contract: String::from("12205ac0cff189e22794b847687578ef4714c7da10fe9e6f6e313649286361b0827f"),
             method: String::from("my_cool_method"),
-            args: String::from("{'a':123,'b':'hello'}"),
+            args: serde_value::value!("{'a':123,'b':'hello'}"),
             public_key: String::from("27m5VgJY2JPbwUH5nPbq9dNpRQYu9PdY2qFQAP42yrz5"),
             private_key: String::from("uL7k4spKA2vhfX1Ndd74pUW9UNzDGmCbXHhrZk5LsLAKcfVok5gbr6gYoS7FqCgfRW8fkH5YfJ4dYACkrt8HT6h"),
         }
