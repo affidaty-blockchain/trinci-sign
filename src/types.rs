@@ -15,18 +15,37 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with TRINCI. If not, see <https://www.gnu.org/licenses/>.
 
+use std::str::FromStr;
+
 use serde::{Deserialize, Serialize};
 use serde_value::Value;
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 pub struct AppCommand {
-    pub operation: String,
-    pub args: Arguments,
+    pub operation: AppOperation,
+    pub args: TxArguments,
     pub url: String,
 }
 
-pub enum Arguments {
+pub enum TxArguments {
     UnitTxArgsType(UnitTxArgs),
+}
+
+pub enum AppOperation {
+    CreateUnitTx,
+    SubmitUnitTx,
+}
+
+impl FromStr for AppOperation {
+    type Err = ();
+
+    fn from_str(input: &str) -> std::result::Result<Self, Self::Err> {
+        match input {
+            "create_unit_tx" => Ok(AppOperation::CreateUnitTx),
+            "submit_unit_tx" => Ok(AppOperation::SubmitUnitTx),
+            _ => Err(()),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
