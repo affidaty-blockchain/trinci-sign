@@ -68,12 +68,21 @@ Example:
 
 ### `submit_unit_tx`
 
+`$ cargo run -- --command submit_unit_tx --json <JSON> --url <URL>`
 `$ cargo run -- --command submit_unit_tx --hex <HEX> --url <URL>`
 `$ cargo run -- --command submit_unit_tx --bs58 <BASE58> --url <URL>` 
-`$ cargo run -- --command submit_unit_tx --json <JSON> --url <URL>`
 
  - The `<HEX>`, `<BASE58>` `<JSON>` arguments are the same of the `create_unit_tx` functionality.
  - the `<URL>` argument is the url (comprehensive of port and path) of the Trinci Node, eg: `http://localhost:8000/api/v1`
 
- - In case of success returns the HEX of the transaction receipt
- - In case of error print the node answer
+ - In case of success returns the HEX of the transaction receipt, eg:
+   ```bash
+   OK|12208496dac2cd6cbb56378d12fef825c5d3a1235ebdf72de33153d6d157d8b383ba
+   ```
+ - In case of error print the node answer, eg:
+   ```bash
+   KO|DuplicatedConfirmedTx
+   KO|Error reading args!
+   KO|Error sending unit tx message Error { kind: MalformedData, source: Some(KeyRejected("InvalidComponent")) }
+   ...
+   ```

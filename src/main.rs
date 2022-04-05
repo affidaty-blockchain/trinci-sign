@@ -36,30 +36,34 @@ mod common;
 mod http_channel;
 mod types;
 
-fn submit_unit_tx(input_args: TxArguments, url: String) -> Result<Vec<u8>> {
-    let tx = create_unit_tx(input_args)?;
+fn submit_unit_tx(input_args: TxArguments, url: String) -> Result<()> {
+    let tx = create_unit_tx_as_vec(input_args)?;
     let mut http_channel = HttpChannel::new(url);
     http_channel.send(tx)?;
     let buf = http_channel.recv()?;
 
     let msg = rmp_deserialize::<Message>(&buf)?;
 
-    let result = match msg {
-        Message::PutTransactionResponse { hash } => hash.as_bytes().to_vec(),
+    let output = match msg {
+        Message::PutTransactionResponse { hash } => {
+            format!("OK|{}", hex::encode(hash.as_bytes()))
+        }
         Message::Exception(e) => {
-            eprintln!("Node Answer: {:?}", e.kind);
-            vec![]
+            format!("KO|{:?}", e.kind)
         }
         _ => {
-            eprintln!("Node Error: {:?}", msg);
-            vec![]
+            format!("KO|{:?}", msg)
         }
     };
 
-    Ok(result)
+    io::stdout()
+        .write_all(output.as_bytes())
+        .unwrap_or_default();
+
+    Ok(())
 }
 
-fn create_unit_tx(input_args: TxArguments) -> Result<Vec<u8>> {
+fn create_unit_tx_as_vec(input_args: TxArguments) -> Result<Vec<u8>> {
     match input_args {
         TxArguments::UnitTxArgsType(input_args) => {
             let contract = if input_args.contract.is_empty() {
@@ -106,21 +110,36 @@ fn create_unit_tx(input_args: TxArguments) -> Result<Vec<u8>> {
     }
 }
 
+fn create_unit_tx(input_args: TxArguments) -> Result<()> {
+    let tx = create_unit_tx_as_vec(input_args)?;
+    io::stdout().write_all(&tx).unwrap_or_default();
+    Ok(())
+}
+
 fn main() {
     let args = get_args();
-    let result = match args {
+    match args {
         Some(cmd) => match cmd.operation {
             AppOperation::CreateUnitTx => {
-                create_unit_tx(cmd.args).expect("Error creating unit tx message")
+                if let Err(e) = create_unit_tx(cmd.args) {
+                    io::stdout()
+                        .write_all(format!("KO|Error creating unit tx message {:?}", e).as_bytes())
+                        .unwrap_or_default();
+                }
             }
             AppOperation::SubmitUnitTx => {
-                submit_unit_tx(cmd.args, cmd.url).expect("Error sending unit tx")
+                if let Err(e) = submit_unit_tx(cmd.args, cmd.url) {
+                    io::stdout()
+                        .write_all(format!("KO|Error sending unit tx message {:?}", e).as_bytes())
+                        .unwrap_or_default();
+                }
             }
         },
         None => {
             eprintln!("Error reading args!");
-            vec![]
+            io::stdout()
+                .write_all("KO|Error reading args!".as_bytes())
+                .unwrap_or_default();
         }
     };
-    io::stdout().write_all(&result).unwrap();
 }
