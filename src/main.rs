@@ -1,10 +1,11 @@
 use std::io::{self, Write};
 
 use clap::{Arg, Command};
+use http_channel::HttpChannel;
 use trinci_core::{
     base::{
         schema::{SignedTransaction, TransactionData},
-        serialize::{rmp_serialize, MessagePack},
+        serialize::{rmp_deserialize, rmp_serialize, MessagePack},
     },
     crypto::{
         ecdsa::{CurveId, KeyPair as EcdsaKeyPair},
@@ -14,6 +15,7 @@ use trinci_core::{
 };
 use types::{AppCommand, Arguments, Result, UnitTxArgs};
 
+mod http_channel;
 mod types;
 
 fn get_args() -> Option<AppCommand> {
@@ -25,9 +27,10 @@ fn get_args() -> Option<AppCommand> {
             Arg::new("command")
                 .long("command")
                 .short('c')
-                .help("Specify the command: { create_unit_tx }")
+                .help("Specify the command: { create_unit_tx | submit_unit_tx }")
                 .value_name("COMMAND")
-                .required(true),
+                .required(true)
+                .requires_if("submit_unit_tx", "url"),
         )
         .arg(
             Arg::new("hex")
@@ -56,12 +59,20 @@ fn get_args() -> Option<AppCommand> {
                 .required_unless_present("json")
                 .required_unless_present("hex"),
         )
+        .arg(
+            Arg::new("url")
+                .long("url")
+                .short('u')
+                .help("Trinci Node url")
+                .value_name("URL"),
+        )
         .get_matches();
 
     let operation = matches.value_of("command").unwrap_or_default();
+    let url = matches.value_of("url").unwrap_or_default();
 
-    let args = match operation {
-        "create_unit_tx" => {
+    match operation {
+        "create_unit_tx" | "submit_unit_tx" => {
             let inner_args = if let Some(hex_text) = matches.value_of("hex") {
                 UnitTxArgs::from_hex_string(hex_text)
             } else if let Some(json_text) = matches.value_of("json") {
@@ -69,25 +80,58 @@ fn get_args() -> Option<AppCommand> {
             } else if let Some(bs58_text) = matches.value_of("bs58") {
                 UnitTxArgs::from_bs58_string(bs58_text)
             } else {
+                eprintln!("Args error");
                 None
             };
             match inner_args {
-                Some(args) => Arguments::UnitTxArgsType(args),
-                None => return None,
+                Some(args) => Some(AppCommand {
+                    operation: operation.to_string(),
+
+                    args: Arguments::UnitTxArgsType(args),
+
+                    url: url.to_string(),
+                }),
+                None => {
+                    eprintln!("Invalid command");
+                    None
+                }
             }
         }
-        _ => return None,
-    };
-
-    Some(AppCommand {
-        operation: operation.to_string(),
-        args,
-    })
+        _ => {
+            eprintln!("Invalid operation: {}", operation);
+            None
+        }
+    }
 }
 
 /// Convert a base58 string into a vec
 fn bs58_into_vec(bs58_text: &str) -> Result<Vec<u8>> {
     bs58::decode(bs58_text).into_vec().map_err(|e| e.into())
+}
+
+fn submit_unit_tx(input_args: Arguments, url: String) -> Result<Vec<u8>> {
+    let tx = create_unit_tx(input_args)?;
+    let mut http_channel = HttpChannel::new(url);
+    http_channel.send(tx)?;
+    let buf = http_channel.recv()?;
+
+    let msg = rmp_deserialize::<Message>(&buf)?;
+
+    let result = match msg {
+        Message::PutTransactionResponse { hash } => {
+            hex::encode(hash.as_bytes()).as_bytes().to_vec()
+        }
+        Message::Exception(e) => {
+            eprintln!("Node Answer: {:?}", e.kind);
+            vec![]
+        }
+        _ => {
+            eprintln!("Node Error: {:?}", msg);
+            vec![]
+        }
+    };
+
+    Ok(result)
 }
 
 fn create_unit_tx(input_args: Arguments) -> Result<Vec<u8>> {
@@ -129,7 +173,7 @@ fn create_unit_tx(input_args: Arguments) -> Result<Vec<u8>> {
 
             let message = Message::PutTransactionRequest { confirm: true, tx };
 
-            // Message pack of the transaction and save as .bin
+            // Message pack of the transaction
             let buf = rmp_serialize(&message)?;
 
             Ok(buf)
@@ -140,16 +184,18 @@ fn create_unit_tx(input_args: Arguments) -> Result<Vec<u8>> {
 fn main() {
     let args = get_args();
     let result = match args {
-        Some(val) => match val.operation.as_str() {
-            "create_unit_tx" => create_unit_tx(val.args).expect("Error creating unit tx message"),
+        Some(cmd) => match cmd.operation.as_str() {
+            "create_unit_tx" => create_unit_tx(cmd.args).expect("Error creating unit tx message"),
+            "submit_unit_tx" => submit_unit_tx(cmd.args, cmd.url).expect("Error sending unit tx"),
             _ => {
+                eprintln!("Invalid command");
                 vec![]
             }
         },
         None => {
+            eprintln!("Error reading args!");
             vec![]
         }
     };
-
     io::stdout().write_all(&result).unwrap();
 }

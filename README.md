@@ -65,3 +65,15 @@ Example:
     "private_key":"3wNt6sUs4jDqgN72ZfX7XWVXXXXXXXXXXXXXXXXXXXXgdE376at1XmgECygypDwiQf",
 }
 ```
+
+### `submit_unit_tx`
+
+`$ cargo run -- --command submit_unit_tx --hex <HEX> --url <URL>`
+`$ cargo run -- --command submit_unit_tx --bs58 <BASE58> --url <URL>` 
+`$ cargo run -- --command submit_unit_tx --json <JSON> --url <URL>`
+
+ - The `<HEX>`, `<BASE58>` `<JSON>` arguments are the same of the `create_unit_tx` functionality.
+ - the `<URL>` argument is the url (comprehensive of port and path) of the Trinci Node, eg: `http://localhost:8000/api/v1`
+
+ - In case of success returns the HEX of the transaction receipt
+ - In case of error print the node answer

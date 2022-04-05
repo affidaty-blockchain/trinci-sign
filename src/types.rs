@@ -5,6 +5,7 @@ pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + S
 pub struct AppCommand {
     pub operation: String,
     pub args: Arguments,
+    pub url: String,
 }
 
 pub enum Arguments {
