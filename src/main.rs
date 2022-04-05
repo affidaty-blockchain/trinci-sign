@@ -1,3 +1,5 @@
+use std::io::{self, Write};
+
 use clap::{Arg, Command};
 use trinci_core::{
     base::{
@@ -88,7 +90,7 @@ fn bs58_into_vec(bs58_text: &str) -> Result<Vec<u8>> {
     bs58::decode(bs58_text).into_vec().map_err(|e| e.into())
 }
 
-fn create_unit_tx(input_args: Arguments) -> Result<()> {
+fn create_unit_tx(input_args: Arguments) -> Result<Vec<u8>> {
     match input_args {
         Arguments::UnitTxArgsType(input_args) => {
             let contract = if input_args.contract.is_empty() {
@@ -130,25 +132,24 @@ fn create_unit_tx(input_args: Arguments) -> Result<()> {
             // Message pack of the transaction and save as .bin
             let buf = rmp_serialize(&message)?;
 
-            std::fs::write("transaction.bin", buf).unwrap();
-
-            println!("Trinci Transaction saved into `transaction.bin`");
-            Ok(())
+            Ok(buf)
         }
     }
 }
 
 fn main() {
     let args = get_args();
-    match args {
+    let result = match args {
         Some(val) => match val.operation.as_str() {
-            "create_unit_tx" => {
-                create_unit_tx(val.args).expect("Error creating unit tx message");
-            }
+            "create_unit_tx" => create_unit_tx(val.args).expect("Error creating unit tx message"),
             _ => {
-                println!("Command error!")
+                vec![]
             }
         },
-        None => println!("Arguments error!"),
-    }
+        None => {
+            vec![]
+        }
+    };
+
+    io::stdout().write_all(&result).unwrap();
 }

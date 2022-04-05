@@ -4,7 +4,6 @@ Binary utility executable to build private key signed transactions, compatible w
 
 This utility is written in rust, but it can be used and compiled on which is an operating system to allow the use of signatures in the web server, downloaded from the language and the technology stack used for the backend
 
-
 ```bash
 Trinci Blockchain Transaction Sign 0.1.0
 
@@ -18,6 +17,13 @@ OPTIONS:
         --help                 Print help information
     -j, --json <JSON>          Arguments in json String
     -V, --version              Print version information
+```
+
+The output is a bytes array with the transaction to send to the TRINCI blockchain, eg with `curl`:
+```bash
+$ cargo run -- --command create_unit_tx --bs58 <BS58DATA> | \ 
+    curl -X POST --header "Content-Type:application/octet-stream" \ 
+    --data-binary @- http://localhost:8000/api/v1/message
 ```
 
 ### `create_unit_tx`
