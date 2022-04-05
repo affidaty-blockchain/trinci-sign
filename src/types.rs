@@ -1,14 +1,51 @@
+// This file is part of TRINCI.
+//
+// Copyright (C) 2021 Affidaty Spa.
+//
+// TRINCI is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Affero General Public License as published by the
+// Free Software Foundation, either version 3 of the License, or (at your
+// option) any later version.
+//
+// TRINCI is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License
+// for more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with TRINCI. If not, see <https://www.gnu.org/licenses/>.
+
+use std::str::FromStr;
+
 use serde::{Deserialize, Serialize};
 use serde_value::Value;
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 pub struct AppCommand {
-    pub operation: String,
-    pub args: Arguments,
+    pub operation: AppOperation,
+    pub args: TxArguments,
+    pub url: String,
 }
 
-pub enum Arguments {
+pub enum TxArguments {
     UnitTxArgsType(UnitTxArgs),
+}
+
+pub enum AppOperation {
+    CreateUnitTx,
+    SubmitUnitTx,
+}
+
+impl FromStr for AppOperation {
+    type Err = ();
+
+    fn from_str(input: &str) -> std::result::Result<Self, Self::Err> {
+        match input {
+            "create_unit_tx" => Ok(AppOperation::CreateUnitTx),
+            "submit_unit_tx" => Ok(AppOperation::SubmitUnitTx),
+            _ => Err(()),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
