@@ -30,7 +30,7 @@ $ cargo run -- --command create_unit_tx --bs58 <BS58DATA> | \
 
 `$ cargo run -- --command create_unit_tx --hex <HEX>`
 `$ cargo run -- --command create_unit_tx --bs58 <BASE58>`
-`$ cargo run -- --command create_unit_tx --json <JSON>`
+`$ cargo run -- --command create_unit_tx --json '<JSON>'`
 
  - `<HEX>` must be the message pack of the structure below.
  - `<BASE58>` must be the message pack of the structure below.
@@ -66,7 +66,7 @@ Example:
 
 ### `submit_unit_tx`
 
-`$ cargo run -- --command submit_unit_tx --json <JSON> --url <URL>`
+`$ cargo run -- --command submit_unit_tx --json '<JSON>' --url <URL>`
 `$ cargo run -- --command submit_unit_tx --hex <HEX> --url <URL>`
 `$ cargo run -- --command submit_unit_tx --bs58 <BASE58> --url <URL>` 
 
