@@ -73,9 +73,8 @@ fn create_unit_tx_as_vec(input_args: TxArguments) -> Result<Vec<u8>> {
             };
 
             let private_bytes = bs58_into_vec(&input_args.private_key)?;
-            let public_bytes = bs58_into_vec(&input_args.public_key)?;
 
-            let kp = EcdsaKeyPair::new(CurveId::Secp384R1, &private_bytes, &public_bytes)?;
+            let kp = EcdsaKeyPair::from_pkcs8_bytes(CurveId::Secp384R1, &private_bytes)?;
 
             let args = rmp_serialize(&input_args.args)?;
 

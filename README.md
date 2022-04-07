@@ -11,11 +11,11 @@ USAGE:
     trinci-sign [OPTIONS] --command <COMMAND>
 
 OPTIONS:
-    -b, --bs58 <BASE58>        Arguments in message packed base58
+    -b, --bs58 <BASE58>        Arguments as message packed base58
     -c, --command <COMMAND>    Specify the command: { create_unit_tx }
-    -h, --hex <HEX>            Arguments in message packed HEX
+    -h, --hex <HEX>            Arguments as message packed HEX
         --help                 Print help information
-    -j, --json <JSON>          Arguments in json String
+    -j, --json <JSON>          Arguments as json String
     -V, --version              Print version information
 ```
 
@@ -46,8 +46,7 @@ args:
     "contract": String,     // Multihash of the contract, empty String if not specified
     "method": String,       // Method to call
     "args": json,           // key/value json
-    "public_key": String,   // base58 of the public key bytes array
-    "private_key":String,   // base58 of the private key bytes array
+    "private_key":String,   // base58 of the private key bytes array in pkcs8
 }
 ```
 
@@ -61,8 +60,7 @@ Example:
     "contract":"12205bdca17463a5fbb92d461b61ec5b502ab2645c3487c94862f9b18c37bc01c118",
     "method":"transfer",
     "args":{"from":"QmamzDVuZqkUDwHikjHCkgJXXXXXXXVDTvTYb2aq6qfLbY","to":"#ANYACCOUNT","units":100},
-    "public_key":"88GH8txjkGw4jZUhUaYrZCfTzHNPfxLSX3QzhgXXXXXXXXXXXXXXXXXXXXXXAH4nC61uGVA6SusX7AvVGNnZqNQwBZqzuZnDBcWsu5kMd9KrngyMg3ikrKUKMdTxXQ9MXqgj",
-    "private_key":"3wNt6sUs4jDqgN72ZfX7XWVXXXXXXXXXXXXXXXXXXXXgdE376at1XmgECygypDwiQf",
+    "private_key":"Invalid3wNt6sUs4jDqgN72ZfX7XWV88GH8txjkGw4jZUhUaYrZCfTzHNPfxLSX3Qzhu5kMd9KrngyMg3ikrKUKMdTxXQ9MXqgj376at1XmgECygypDwiQf",
 }
 ```
 
