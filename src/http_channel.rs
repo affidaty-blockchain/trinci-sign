@@ -34,7 +34,10 @@ impl HttpChannel {
         let url = self.url.to_string() + "/message";
         let mut body = vec![];
 
-        match ureq::post(&url).send_bytes(&buf) {
+        match ureq::post(&url)
+            .set("Content-Type", "application/octet-stream")
+            .send_bytes(&buf)
+        {
             Ok(res) => {
                 res.into_reader().read_to_end(&mut body)?;
                 self.res = Some(Ok(body));
