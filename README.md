@@ -84,3 +84,21 @@ Example:
    KO|Error sending unit tx message Error { kind: MalformedData, source: Some(KeyRejected("InvalidComponent")) }
    ...
    ```
+
+## Compilation
+
+### Linux
+```bash
+cargo build --release
+```
+
+### Windows from Linux
+```bash
+cargo build --release --target x86_64-pc-windows-gnu
+```
+Note: you need to install the cross-compilation toolchain:
+
+ - For Debian:
+   ```bash
+   sudo apt-get install gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64
+   ```
