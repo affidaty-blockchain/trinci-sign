@@ -78,7 +78,7 @@ fn create_unit_tx_as_vec(input_args: Arguments) -> Result<Vec<u8>> {
 
             let args = rmp_serialize(&input_args.args)?;
 
-            let nonce = bs58_into_vec(&input_args.nonce)?;
+            let nonce = rand::random::<u64>().to_be_bytes().to_vec();
 
             let data = TransactionDataV1 {
                 account: input_args.target,

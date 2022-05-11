@@ -111,8 +111,6 @@ pub fn get_args() -> Option<AppCommand> {
             }
         }
         AppOperation::ToMessagePack => {
-            println!("to_msgpack_struct {}", to_msgpack_struct);
-
             if !to_msgpack_string.is_empty() {
                 Some(AppCommand {
                     operation,

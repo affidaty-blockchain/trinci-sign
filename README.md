@@ -45,7 +45,6 @@ args:
 {
     "target": String,       // Target account
     "network": String,      // Blockchain Network (it is in Multihash format)
-    "nonce": String,        // base58 of a bytes array
     "fuel": integer,        // Max fuel allowed
     "contract": String,     // Multihash of the contract, empty String if not specified
     "method": String,       // Method to call
