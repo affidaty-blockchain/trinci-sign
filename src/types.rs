@@ -23,17 +23,19 @@ use serde_value::Value;
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 pub struct AppCommand {
     pub operation: AppOperation,
-    pub args: TxArguments,
+    pub args: Arguments,
     pub url: String,
 }
 
-pub enum TxArguments {
+pub enum Arguments {
     UnitTxArgsType(UnitTxArgs),
+    MsgPackString(Vec<u8>),
 }
 
 pub enum AppOperation {
     CreateUnitTx,
     SubmitUnitTx,
+    ToMessagePack,
 }
 
 impl FromStr for AppOperation {
@@ -43,6 +45,7 @@ impl FromStr for AppOperation {
         match input {
             "create_unit_tx" => Ok(AppOperation::CreateUnitTx),
             "submit_unit_tx" => Ok(AppOperation::SubmitUnitTx),
+            "to_message_pack" => Ok(AppOperation::ToMessagePack),
             _ => Err(()),
         }
     }

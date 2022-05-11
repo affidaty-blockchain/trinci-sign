@@ -2,7 +2,15 @@ ChangeLog
 =========
 
 
-0.1.0 - unreleased
+0.1.1 - 11-05-2022
+------------------
+Added
+* `to_message_pack` string conversion
+
+Improved
+* added proper content type to ureq post request
+
+0.1.0 - 05-04-2022
 ------------------
 Added
 * `create_unit_tx` functionality

@@ -30,13 +30,13 @@ use trinci_core::{
     },
     KeyPair, Message, TransactionDataV1,
 };
-use types::{AppOperation, Result, TxArguments};
+use types::{AppOperation, Arguments, Result};
 
 mod common;
 mod http_channel;
 mod types;
 
-fn submit_unit_tx(input_args: TxArguments, url: String) -> Result<()> {
+fn submit_unit_tx(input_args: Arguments, url: String) -> Result<()> {
     let tx = create_unit_tx_as_vec(input_args)?;
     let mut http_channel = HttpChannel::new(url);
     http_channel.send(tx)?;
@@ -63,9 +63,9 @@ fn submit_unit_tx(input_args: TxArguments, url: String) -> Result<()> {
     Ok(())
 }
 
-fn create_unit_tx_as_vec(input_args: TxArguments) -> Result<Vec<u8>> {
+fn create_unit_tx_as_vec(input_args: Arguments) -> Result<Vec<u8>> {
     match input_args {
-        TxArguments::UnitTxArgsType(input_args) => {
+        Arguments::UnitTxArgsType(input_args) => {
             let contract = if input_args.contract.is_empty() {
                 None
             } else {
@@ -106,10 +106,23 @@ fn create_unit_tx_as_vec(input_args: TxArguments) -> Result<Vec<u8>> {
 
             Ok(buf)
         }
+        Arguments::MsgPackString(_) => panic!("unexpected value"),
     }
 }
 
-fn create_unit_tx(input_args: TxArguments) -> Result<()> {
+fn convert_string_to_msgpack(input_args: Arguments) -> Result<()> {
+    match input_args {
+        Arguments::MsgPackString(args) => {
+            let value = format!("{:?}", args).replace(' ', "");
+            io::stdout().write_all(value.as_bytes()).unwrap_or_default()
+        }
+        _ => panic!("unexpected value"),
+    }
+
+    Ok(())
+}
+
+fn create_unit_tx(input_args: Arguments) -> Result<()> {
     let tx = create_unit_tx_as_vec(input_args)?;
     io::stdout().write_all(&tx).unwrap_or_default();
     Ok(())
@@ -130,6 +143,15 @@ fn main() {
                 if let Err(e) = submit_unit_tx(cmd.args, cmd.url) {
                     io::stdout()
                         .write_all(format!("KO|Error sending unit tx message {:?}", e).as_bytes())
+                        .unwrap_or_default();
+                }
+            }
+            AppOperation::ToMessagePack => {
+                if let Err(e) = convert_string_to_msgpack(cmd.args) {
+                    io::stdout()
+                        .write_all(
+                            format!("KO|converting the string into msgpack {:?}", e).as_bytes(),
+                        )
                         .unwrap_or_default();
                 }
             }
