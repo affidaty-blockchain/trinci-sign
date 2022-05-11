@@ -106,18 +106,21 @@ fn create_unit_tx_as_vec(input_args: Arguments) -> Result<Vec<u8>> {
 
             Ok(buf)
         }
-        Arguments::MsgPackString(_) => panic!("unexpected value"),
+        _ => panic!("unexpected value"),
     }
 }
 
-fn convert_string_to_msgpack(input_args: Arguments) -> Result<()> {
-    match input_args {
-        Arguments::MsgPackString(args) => {
-            let value = format!("{:?}", args).replace(' ', "");
-            io::stdout().write_all(value.as_bytes()).unwrap_or_default()
-        }
-        _ => panic!("unexpected value"),
-    }
+fn convert_string_to_msgpack(input_args: String) -> Result<()> {
+    let args = rmp_serialize(&input_args)?;
+    let value = format!("{:?}", args).replace(' ', "");
+    io::stdout().write_all(value.as_bytes()).unwrap_or_default();
+
+    Ok(())
+}
+fn convert_json_struct_to_msgpack(input_args: serde_json::Value) -> Result<()> {
+    let args = rmp_serialize(&input_args)?;
+    let value = format!("{:?}", args).replace(' ', "");
+    io::stdout().write_all(value.as_bytes()).unwrap_or_default();
 
     Ok(())
 }
@@ -146,15 +149,28 @@ fn main() {
                         .unwrap_or_default();
                 }
             }
-            AppOperation::ToMessagePack => {
-                if let Err(e) = convert_string_to_msgpack(cmd.args) {
-                    io::stdout()
-                        .write_all(
-                            format!("KO|converting the string into msgpack {:?}", e).as_bytes(),
-                        )
-                        .unwrap_or_default();
+            AppOperation::ToMessagePack => match cmd.args {
+                Arguments::MsgPackString(val) => {
+                    if let Err(e) = convert_string_to_msgpack(val) {
+                        io::stdout()
+                            .write_all(
+                                format!("KO|converting the string into msgpack {:?}", e).as_bytes(),
+                            )
+                            .unwrap_or_default();
+                    }
                 }
-            }
+                Arguments::MsgPackStruct(json_struct) => {
+                    if let Err(e) = convert_json_struct_to_msgpack(json_struct) {
+                        io::stdout()
+                            .write_all(
+                                format!("KO|converting the json structure into msgpack {:?}", e)
+                                    .as_bytes(),
+                            )
+                            .unwrap_or_default();
+                    }
+                }
+                Arguments::UnitTxArgsType(_) => panic!("unexpected value"),
+            },
         },
         None => {
             eprintln!("Error reading args!");

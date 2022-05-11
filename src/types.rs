@@ -18,7 +18,7 @@
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
-use serde_value::Value;
+use serde_json::Value;
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 pub struct AppCommand {
@@ -29,7 +29,8 @@ pub struct AppCommand {
 
 pub enum Arguments {
     UnitTxArgsType(UnitTxArgs),
-    MsgPackString(Vec<u8>),
+    MsgPackString(String),
+    MsgPackStruct(Value),
 }
 
 pub enum AppOperation {
@@ -59,7 +60,7 @@ pub struct UnitTxArgs {
     pub fuel: u64,
     pub contract: String,
     pub method: String,
-    pub args: Value,
+    pub args: serde_value::Value,
     pub private_key: String, // base58 of a bytes array
 }
 

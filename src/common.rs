@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use clap::{Arg, Command};
-use trinci_core::base::serialize::rmp_serialize;
+use serde_json::Value;
 
 use crate::types::{self, AppCommand, AppOperation, Arguments, Result, UnitTxArgs};
 
@@ -29,7 +29,7 @@ fn create_app() -> Command<'static> {
                 .short('h')
                 .help("Arguments in messagepacked HEX")
                 .value_name("HEX")
-                .required_unless_present_any(&["json", "bs58", "string"]),
+                .required_unless_present_any(&["json", "bs58", "string", "jsonstruct"]),
         )
         .arg(
             Arg::new("json")
@@ -37,7 +37,7 @@ fn create_app() -> Command<'static> {
                 .short('j')
                 .help("Arguments in json String")
                 .value_name("JSON")
-                .required_unless_present_any(&["hex", "bs58", "string"]),
+                .required_unless_present_any(&["hex", "bs58", "string", "jsonstruct"]),
         )
         .arg(
             Arg::new("bs58")
@@ -45,14 +45,21 @@ fn create_app() -> Command<'static> {
                 .short('b')
                 .help("Arguments in messagepacked base58")
                 .value_name("BASE58")
-                .required_unless_present_any(&["json", "hex", "string"]),
+                .required_unless_present_any(&["json", "hex", "string", "jsonstruct"]),
         )
         .arg(
             Arg::new("string")
                 .long("string")
                 .help("String to convert in MessagePack")
                 .value_name("STRING")
-                .required_if_eq("command", "to_message_pack"),
+                .required_unless_present_any(&["json", "hex", "bs58", "jsonstruct"]),
+        )
+        .arg(
+            Arg::new("jsonstruct")
+                .long("jsonstruct")
+                .help("Json structure to convert in MessagePack")
+                .value_name("jsonstruct")
+                .required_unless_present_any(&["json", "hex", "bs58", "string"]),
         )
         .arg(
             Arg::new("url")
@@ -75,6 +82,7 @@ pub fn get_args() -> Option<AppCommand> {
     };
 
     let to_msgpack_string = matches.value_of("string").unwrap_or_default();
+    let to_msgpack_struct = matches.value_of("jsonstruct").unwrap_or_default();
 
     let url = matches.value_of("url").unwrap_or_default();
 
@@ -102,14 +110,32 @@ pub fn get_args() -> Option<AppCommand> {
                 }
             }
         }
-        AppOperation::ToMessagePack => match rmp_serialize(&to_msgpack_string) {
-            Ok(val) => Some(AppCommand {
-                operation,
-                args: types::Arguments::MsgPackString(val),
-                url: "".to_string(),
-            }),
-            Err(_) => todo!(),
-        },
+        AppOperation::ToMessagePack => {
+            println!("to_msgpack_struct {}", to_msgpack_struct);
+
+            if !to_msgpack_string.is_empty() {
+                Some(AppCommand {
+                    operation,
+                    args: types::Arguments::MsgPackString(to_msgpack_string.to_string()),
+                    url: "".to_string(),
+                })
+            } else if !to_msgpack_struct.is_empty() {
+                match Value::from_str(to_msgpack_struct) {
+                    Ok(val) => Some(AppCommand {
+                        operation,
+                        args: types::Arguments::MsgPackStruct(val),
+                        url: "".to_string(),
+                    }),
+                    Err(_) => {
+                        eprintln!("Invalid json structure!");
+                        None
+                    }
+                }
+            } else {
+                eprintln!("Invalid string!");
+                None
+            }
+        }
     }
 }
 
@@ -193,7 +219,15 @@ mod tests {
 
     #[test]
     fn test_to_message_pack_json_command() {
-        // TODO
+        let command = create_app().try_get_matches_from(vec![
+            "prog",
+            "--command",
+            "to_message_pack",
+            "--jsonstruct",
+            "any",
+        ]);
+        println!("command: {:?}", command);
+        assert!(command.is_ok())
     }
     #[test]
     fn test_to_message_pack_string_command() {
@@ -204,7 +238,6 @@ mod tests {
             "--string",
             "any",
         ]);
-        println!("command: {:?}", command);
         assert!(command.is_ok())
     }
 }

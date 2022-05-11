@@ -11,12 +11,16 @@ USAGE:
     trinci-sign [OPTIONS] --command <COMMAND>
 
 OPTIONS:
-    -b, --bs58 <BASE58>        Arguments as message packed base58
-    -c, --command <COMMAND>    Specify the command: { create_unit_tx }
-    -h, --hex <HEX>            Arguments as message packed HEX
-        --help                 Print help information
-    -j, --json <JSON>          Arguments as json String
-    -V, --version              Print version information
+    -b, --bs58 <BASE58>              Arguments in messagepacked base58
+    -c, --command <COMMAND>          Specify the command: { create_unit_tx | submit_unit_tx |
+                                     to_message_pack }
+    -h, --hex <HEX>                  Arguments in messagepacked HEX
+        --help                       Print help information
+    -j, --json <JSON>                Arguments in json String
+        --jsonstruct <jsonstruct>    Json structure to convert in MessagePack
+        --string <STRING>            String to convert in MessagePack
+    -u, --url <URL>                  Trinci Node url
+    -V, --version                    Print version information
 ```
 
 The output is a bytes array with the transaction to send to the TRINCI blockchain, eg with `curl`:
@@ -85,6 +89,25 @@ Example:
    ...
    ```
 
+### MessagePack Conversion Utility: `to_message_pack`
+#### `String`
+`$ cargo run -- --command to_message_pack --string <STRING>`
+
+Example
+`$ cargo run -- --command to_message_pack --string "Hello, Trinci!"`
+
+Result:
+`[174,72,101,108,108,111,44,32,84,114,105,110,99,105,33]`
+
+
+#### `Json Structures`
+`$ cargo run -- --command to_message_pack --jsonstruct '<JSONSTRUCT>'`
+
+Example
+`$ cargo run -- --command to_message_pack --jsonstruct '{"a":1,"b":"text","c":[1,2,3]}'`
+
+Result:
+`[131,161,97,1,161,98,164,116,101,120,116,161,99,147,1,2,3]`
 ## Compilation
 
 ### Linux

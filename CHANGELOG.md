@@ -5,7 +5,7 @@ ChangeLog
 0.1.1 - 11-05-2022
 ------------------
 Added
-* `to_message_pack` string conversion
+* `to_message_pack` string and json structures conversion
 
 Improved
 * added proper content type to ureq post request
