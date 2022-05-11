@@ -4,6 +4,9 @@ ChangeLog
 
 0.1.1 - 11-05-2022
 ------------------
+Changed
+* removed `nonce` from args, now it is random 
+
 Added
 * `to_message_pack` string and json structures conversion
 

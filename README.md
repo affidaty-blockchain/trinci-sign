@@ -58,7 +58,6 @@ Example:
 {
     "target":"#MYACCOUNT",
     "network":"QmNiibPaxdU61jSUK35dRwVQYjF9AC3GScWTRzRdFtZ4vZ",
-    "nonce":"VgsL75FnH3X",
     "fuel":1000,
     "contract":"12205bdca17463a5fbb92d461b61ec5b502ab2645c3487c94862f9b18c37bc01c118",
     "method":"transfer",
