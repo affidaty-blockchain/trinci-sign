@@ -1,8 +1,24 @@
 ChangeLog
 =========
 
+0.1.2 - 13-05-2022
+------------------
+Changed
+* removed `default-features=false` for ureq
+  now tls is enabled
 
-0.1.0 - unreleased
+0.1.1 - 11-05-2022
+------------------
+Changed
+* removed `nonce` from args, now it is random 
+
+Added
+* `to_message_pack` string and json structures conversion
+
+Improved
+* added proper content type to ureq post request
+
+0.1.0 - 05-04-2022
 ------------------
 Added
 * `create_unit_tx` functionality

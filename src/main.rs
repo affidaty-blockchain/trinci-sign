@@ -30,13 +30,13 @@ use trinci_core::{
     },
     KeyPair, Message, TransactionDataV1,
 };
-use types::{AppOperation, Result, TxArguments};
+use types::{AppOperation, Arguments, Result};
 
 mod common;
 mod http_channel;
 mod types;
 
-fn submit_unit_tx(input_args: TxArguments, url: String) -> Result<()> {
+fn submit_unit_tx(input_args: Arguments, url: String) -> Result<()> {
     let tx = create_unit_tx_as_vec(input_args)?;
     let mut http_channel = HttpChannel::new(url);
     http_channel.send(tx)?;
@@ -63,9 +63,9 @@ fn submit_unit_tx(input_args: TxArguments, url: String) -> Result<()> {
     Ok(())
 }
 
-fn create_unit_tx_as_vec(input_args: TxArguments) -> Result<Vec<u8>> {
+fn create_unit_tx_as_vec(input_args: Arguments) -> Result<Vec<u8>> {
     match input_args {
-        TxArguments::UnitTxArgsType(input_args) => {
+        Arguments::UnitTxArgsType(input_args) => {
             let contract = if input_args.contract.is_empty() {
                 None
             } else {
@@ -78,7 +78,7 @@ fn create_unit_tx_as_vec(input_args: TxArguments) -> Result<Vec<u8>> {
 
             let args = rmp_serialize(&input_args.args)?;
 
-            let nonce = bs58_into_vec(&input_args.nonce)?;
+            let nonce = rand::random::<u64>().to_be_bytes().to_vec();
 
             let data = TransactionDataV1 {
                 account: input_args.target,
@@ -106,10 +106,26 @@ fn create_unit_tx_as_vec(input_args: TxArguments) -> Result<Vec<u8>> {
 
             Ok(buf)
         }
+        _ => panic!("unexpected value"),
     }
 }
 
-fn create_unit_tx(input_args: TxArguments) -> Result<()> {
+fn convert_string_to_msgpack(input_args: String) -> Result<()> {
+    let args = rmp_serialize(&input_args)?;
+    let value = format!("{:?}", args).replace(' ', "");
+    io::stdout().write_all(value.as_bytes()).unwrap_or_default();
+
+    Ok(())
+}
+fn convert_json_struct_to_msgpack(input_args: serde_json::Value) -> Result<()> {
+    let args = rmp_serialize(&input_args)?;
+    let value = format!("{:?}", args).replace(' ', "");
+    io::stdout().write_all(value.as_bytes()).unwrap_or_default();
+
+    Ok(())
+}
+
+fn create_unit_tx(input_args: Arguments) -> Result<()> {
     let tx = create_unit_tx_as_vec(input_args)?;
     io::stdout().write_all(&tx).unwrap_or_default();
     Ok(())
@@ -133,6 +149,28 @@ fn main() {
                         .unwrap_or_default();
                 }
             }
+            AppOperation::ToMessagePack => match cmd.args {
+                Arguments::MsgPackString(val) => {
+                    if let Err(e) = convert_string_to_msgpack(val) {
+                        io::stdout()
+                            .write_all(
+                                format!("KO|converting the string into msgpack {:?}", e).as_bytes(),
+                            )
+                            .unwrap_or_default();
+                    }
+                }
+                Arguments::MsgPackStruct(json_struct) => {
+                    if let Err(e) = convert_json_struct_to_msgpack(json_struct) {
+                        io::stdout()
+                            .write_all(
+                                format!("KO|converting the json structure into msgpack {:?}", e)
+                                    .as_bytes(),
+                            )
+                            .unwrap_or_default();
+                    }
+                }
+                Arguments::UnitTxArgsType(_) => panic!("unexpected value"),
+            },
         },
         None => {
             eprintln!("Error reading args!");
