@@ -42,20 +42,25 @@ fn submit_unit_tx(input_args: Arguments, url: String) -> Result<()> {
     http_channel.send(tx)?;
     let buf = http_channel.recv()?;
 
-    let msg = rmp_deserialize::<Message>(&buf)?;
+    let output = if String::from_utf8_lossy(&buf) == *"true" {
+        String::from("OK|Valid Transaction!")
+    } else if String::from_utf8_lossy(&buf) == *"false" {
+        String::from("KO|Invalid Transaction!")
+    } else {
+        let msg = rmp_deserialize::<Message>(&buf)?;
 
-    let output = match msg {
-        Message::PutTransactionResponse { hash } => {
-            format!("OK|{}", hex::encode(hash.as_bytes()))
-        }
-        Message::Exception(e) => {
-            format!("KO|{:?}", e.kind)
-        }
-        _ => {
-            format!("KO|{:?}", msg)
+        match msg {
+            Message::PutTransactionResponse { hash } => {
+                format!("OK|{}", hex::encode(hash.as_bytes()))
+            }
+            Message::Exception(e) => {
+                format!("KO|{:?}", e.kind)
+            }
+            _ => {
+                format!("KO|{:?}", msg)
+            }
         }
     };
-
     io::stdout()
         .write_all(output.as_bytes())
         .unwrap_or_default();
