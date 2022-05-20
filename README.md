@@ -1,4 +1,6 @@
-# Trinci Sign
+# Trinci Sign Lib
+
+### OBSOLETE: TO CHECK
 
 Binary utility executable to build private key signed transactions, compatible with TRINCI2 technology.
 

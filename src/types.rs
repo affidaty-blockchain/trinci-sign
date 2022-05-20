@@ -18,20 +18,8 @@
 use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
-pub struct AppCommand {
-    pub operation: AppOperation,
-    pub args: Arguments,
-    pub url: String,
-}
-
-pub enum Arguments {
-    UnitTxArgsType(UnitTxArgs),
-    MsgPackString(String),
-    MsgPackStruct(Value),
-}
 
 pub enum AppOperation {
     CreateUnitTx,
@@ -71,6 +59,7 @@ impl UnitTxArgs {
         }
     }
 
+    #[allow(dead_code)]
     pub fn from_hex_string(hex_text: &str) -> Option<Self> {
         match hex::decode(hex_text) {
             Ok(buf) => match rmp_serde::from_slice::<UnitTxArgs>(&buf) {
@@ -81,6 +70,7 @@ impl UnitTxArgs {
         }
     }
 
+    #[allow(dead_code)]
     pub fn from_bs58_string(bs58_text: &str) -> Option<Self> {
         match bs58::decode(bs58_text).into_vec() {
             Ok(buf) => match rmp_serde::from_slice::<UnitTxArgs>(&buf) {
