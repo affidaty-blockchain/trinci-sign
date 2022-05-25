@@ -1,6 +1,12 @@
 ChangeLog
 =========
 
+0.1.3 - 25-05-2022
+------------------
+Changed
+* replaced flag `--command` with clap subcommands (see README)
+* replaced `--jsonstruct` option with `--json` when `to_message_pack` subcommand is invoked
+
 0.1.2 - 13-05-2022
 ------------------
 Changed
