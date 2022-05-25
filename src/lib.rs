@@ -115,11 +115,11 @@ fn create_unit_tx_as_vec(input_args: UnitTxArgs) -> Result<Vec<u8>> {
 
 #[no_mangle]
 pub extern "C" fn convert_json_to_msgpack(input_args: *mut c_char) -> *mut c_char {
-    println!("args: {:?}", input_args);
-
-    let c_str: &CStr = unsafe { CStr::from_ptr(input_args) };
-    let str_slice: &str = c_str.to_str().unwrap();
-    let input_args: String = str_slice.to_owned(); // if necessary
+    let c_str = unsafe { CStr::from_ptr(input_args) };
+    let input_args = match c_str.to_str() {
+        Ok(val) => val.to_owned(),
+        Err(_) => return store_string_on_heap("KO|bad input".to_string()),
+    };
 
     match serde_json::from_str::<Value>(&input_args) {
         Ok(val) => match rmp_serialize(&val) {
@@ -134,17 +134,30 @@ pub extern "C" fn convert_json_to_msgpack(input_args: *mut c_char) -> *mut c_cha
 }
 
 #[no_mangle]
-fn submit_unit_tx(input_args: String, url: String) -> String {
-    // FIXME add pub extern "C"
-    if let Some(input_args) = UnitTxArgs::from_json_string(&input_args) {
+pub extern "C" fn submit_unit_tx(input_args: *mut c_char, url: *mut c_char) -> *mut c_char {
+    let c_str_args = unsafe { CStr::from_ptr(input_args) };
+    let input_args = match c_str_args.to_str() {
+        Ok(val) => val.to_owned(),
+        Err(_) => return store_string_on_heap("KO|bad args input".to_string()),
+    };
+
+    let c_str_url = unsafe { CStr::from_ptr(input_args) };
+    let url = match c_str_url.to_str() {
+        Ok(val) => val.to_owned(),
+        Err(_) => return store_string_on_heap("KO|bad url input".to_string()),
+    };
+
+    println!("args: {}\nurl: {}", input_args, url);
+
+    if let Some(input_args) = UnitTxArgs::from_json_string(&url) {
         let tx = unwrap_or_return!(
             create_unit_tx_as_vec(input_args),
-            String::from("KO|error creating unit tx")
+            store_string_on_heap(String::from("KO|error creating unit tx"))
         );
         let mut http_channel = HttpChannel::new(url);
         unwrap_or_return!(
             http_channel.send(tx),
-            String::from("KO|error sending unit tx")
+            store_string_on_heap(String::from("KO|error sending unit tx"))
         );
         let buf = unwrap_or_return!(http_channel.recv(), String::from("KO|error on recv"));
 
@@ -170,9 +183,9 @@ fn submit_unit_tx(input_args: String, url: String) -> String {
                 }
             }
         };
-        format!("OK|{}", output)
+        store_string_on_heap(format!("OK|{}", output))
     } else {
-        "KO|Bad input args".to_string()
+        store_string_on_heap("KO|Bad input".to_string())
     }
 }
 
