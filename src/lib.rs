@@ -17,7 +17,7 @@
 
 use http_channel::HttpChannel;
 use serde_json::Value;
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 use trinci_core::{
     base::{
@@ -51,7 +51,8 @@ macro_rules! unwrap_or_return {
     };
 }
 
-fn store_string_on_heap(string_to_store: &'static str) -> *mut c_char {
+fn store_string_on_heap(string_to_store: String) -> *mut c_char {
+    // fn store_string_on_heap(string_to_store: &'static str) -> *mut c_char {
     //create a new raw pointer
     let pntr = CString::new(string_to_store).unwrap().into_raw();
     //store it in our static variable (REQUIRES UNSAFE)
@@ -116,19 +117,25 @@ fn create_unit_tx_as_vec(input_args: UnitTxArgs) -> Result<Vec<u8>> {
 pub extern "C" fn convert_json_to_msgpack(input_args: *mut c_char) -> *mut c_char {
     println!("args: {:?}", input_args);
 
-    let input_args = CString::new(input_args).unwrap().to_str().unwrap(); // FIXME
+    let c_str: &CStr = unsafe { CStr::from_ptr(input_args) };
+    let str_slice: &str = c_str.to_str().unwrap();
+    let input_args: String = str_slice.to_owned(); // if necessary
 
     match serde_json::from_str::<Value>(&input_args) {
         Ok(val) => match rmp_serialize(&val) {
-            Ok(buf) => store_string_on_heap(&format!("{:?}", buf).replace(' ', "")),
-            Err(_) => store_string_on_heap("KO|serialization error"),
+            Ok(buf) => {
+                let res = format!("{:?}", buf).replace(' ', "");
+                store_string_on_heap(res)
+            }
+            Err(_) => store_string_on_heap("KO|serialization error".to_string()),
         },
-        Err(_) => store_string_on_heap("KO|bad input"),
+        Err(_) => store_string_on_heap("KO|bad input".to_string()),
     }
 }
 
 #[no_mangle]
-pub extern "C" fn submit_unit_tx(input_args: String, url: String) -> String {
+fn submit_unit_tx(input_args: String, url: String) -> String {
+    // FIXME add pub extern "C"
     if let Some(input_args) = UnitTxArgs::from_json_string(&input_args) {
         let tx = unwrap_or_return!(
             create_unit_tx_as_vec(input_args),
