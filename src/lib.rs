@@ -150,9 +150,7 @@ pub extern "C" fn submit_unit_tx(input_args: *mut c_char, url: *mut c_char) -> *
         Err(_) => return store_string_on_heap("KO|bad url input".to_string()),
     };
 
-    println!("args: {}\nurl: {}", input_args, url);
-
-    if let Some(input_args) = UnitTxArgs::from_json_string(&url) {
+    if let Some(input_args) = UnitTxArgs::from_json_string(&input_args) {
         let tx = unwrap_or_return!(
             create_unit_tx_as_vec(input_args),
             store_string_on_heap(String::from("KO|error creating unit tx"))
@@ -189,7 +187,7 @@ pub extern "C" fn submit_unit_tx(input_args: *mut c_char, url: *mut c_char) -> *
                 }
             }
         };
-        store_string_on_heap(format!("OK|{}", output))
+        store_string_on_heap(format!("{}", output))
     } else {
         store_string_on_heap("KO|Bad input".to_string())
     }
