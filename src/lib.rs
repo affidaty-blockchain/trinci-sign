@@ -17,6 +17,8 @@
 
 use http_channel::HttpChannel;
 use serde_json::Value;
+use std::ffi::CString;
+use std::os::raw::c_char;
 use trinci_core::{
     base::{
         schema::{SignedTransaction, TransactionData},
@@ -33,6 +35,8 @@ use types::{Result, UnitTxArgs};
 mod http_channel;
 mod types;
 
+static mut RESULT_STRING_PTR: *mut c_char = 0 as *mut c_char;
+
 /// Convert a base58 string into a vec
 pub fn bs58_into_vec(bs58_text: &str) -> Result<Vec<u8>> {
     bs58::decode(bs58_text).into_vec().map_err(|e| e.into())
@@ -45,6 +49,25 @@ macro_rules! unwrap_or_return {
             Err(_) => return $val,
         }
     };
+}
+
+fn store_string_on_heap(string_to_store: &'static str) -> *mut c_char {
+    //create a new raw pointer
+    let pntr = CString::new(string_to_store).unwrap().into_raw();
+    //store it in our static variable (REQUIRES UNSAFE)
+    unsafe {
+        RESULT_STRING_PTR = pntr;
+    }
+    //return the c_char
+    return pntr;
+}
+
+#[no_mangle]
+pub extern "C" fn free_string() {
+    unsafe {
+        let _ = CString::from_raw(RESULT_STRING_PTR);
+        RESULT_STRING_PTR = 0 as *mut c_char;
+    }
 }
 
 fn create_unit_tx_as_vec(input_args: UnitTxArgs) -> Result<Vec<u8>> {
@@ -90,18 +113,22 @@ fn create_unit_tx_as_vec(input_args: UnitTxArgs) -> Result<Vec<u8>> {
 }
 
 #[no_mangle]
-fn convert_json_to_msgpack(input_args: String) -> String {
+pub extern "C" fn convert_json_to_msgpack(input_args: *mut c_char) -> *mut c_char {
+    println!("args: {:?}", input_args);
+
+    let input_args = CString::new(input_args).unwrap().to_str().unwrap(); // FIXME
+
     match serde_json::from_str::<Value>(&input_args) {
         Ok(val) => match rmp_serialize(&val) {
-            Ok(buf) => format!("{:?}", buf).replace(' ', ""),
-            Err(_) => "KO|serialization error".to_string(),
+            Ok(buf) => store_string_on_heap(&format!("{:?}", buf).replace(' ', "")),
+            Err(_) => store_string_on_heap("KO|serialization error"),
         },
-        Err(_) => "KO|bad input".to_string(),
+        Err(_) => store_string_on_heap("KO|bad input"),
     }
 }
 
 #[no_mangle]
-fn submit_unit_tx(input_args: String, url: String) -> String {
+pub extern "C" fn submit_unit_tx(input_args: String, url: String) -> String {
     if let Some(input_args) = UnitTxArgs::from_json_string(&input_args) {
         let tx = unwrap_or_return!(
             create_unit_tx_as_vec(input_args),
