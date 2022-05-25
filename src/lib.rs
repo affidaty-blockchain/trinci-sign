@@ -187,7 +187,7 @@ pub extern "C" fn submit_unit_tx(input_args: *mut c_char, url: *mut c_char) -> *
                 }
             }
         };
-        store_string_on_heap(format!("{}", output))
+        store_string_on_heap(output)
     } else {
         store_string_on_heap("KO|Bad input".to_string())
     }

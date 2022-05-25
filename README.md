@@ -1,127 +1,100 @@
-# Trinci Sign Lib
+# Trinci Sign Dynamic-link Library
+Trinci Dynamic-link Library to submit signed transactions to TRINCI BLOCKCHAIN TRINCI2 technology.
 
-### OBSOLETE: TO CHECK
-
-Binary utility executable to build private key signed transactions, compatible with TRINCI2 technology.
-
-This utility is written in rust, but it can be used and compiled on which is an operating system to allow the use of signatures in the web server, downloaded from the language and the technology stack used for the backend
-
-```bash
-Trinci Blockchain Transaction Sign 0.1.0
-
-USAGE:
-    trinci-sign [OPTIONS] --command <COMMAND>
-
-OPTIONS:
-    -b, --bs58 <BASE58>              Arguments in messagepacked base58
-    -c, --command <COMMAND>          Specify the command: { create_unit_tx | submit_unit_tx |
-                                     to_message_pack }
-    -h, --hex <HEX>                  Arguments in messagepacked HEX
-        --help                       Print help information
-    -j, --json <JSON>                Arguments in json String
-        --jsonstruct <jsonstruct>    Json structure to convert in MessagePack
-        --string <STRING>            String to convert in MessagePack
-    -u, --url <URL>                  Trinci Node url
-    -V, --version                    Print version information
-```
-
-The output is a bytes array with the transaction to send to the TRINCI blockchain, eg with `curl`:
-```bash
-$ cargo run -- --command create_unit_tx --bs58 <BS58DATA> | \ 
-    curl -X POST --header "Content-Type:application/octet-stream" \ 
-    --data-binary @- http://localhost:8000/api/v1/message
-```
-
-### `create_unit_tx`
-
-`$ cargo run -- --command create_unit_tx --hex <HEX>`
-`$ cargo run -- --command create_unit_tx --bs58 <BASE58>`
-`$ cargo run -- --command create_unit_tx --json '<JSON>'`
-
- - `<HEX>` must be the message pack of the structure below.
- - `<BASE58>` must be the message pack of the structure below.
- - `<JSON>` must be the structure below passed as String. 
-
-```json
-args: 
-{
-    "target": String,       // Target account
-    "network": String,      // Blockchain Network (it is in Multihash format)
-    "fuel": integer,        // Max fuel allowed
-    "contract": String,     // Multihash of the contract, empty String if not specified
-    "method": String,       // Method to call
-    "args": json,           // key/value json
-    "private_key":String,   // base58 of the private key bytes array in pkcs8
-}
-```
-
-Example:
-```json
-{
-    "target":"#MYACCOUNT",
-    "network":"QmNiibPaxdU61jSUK35dRwVQYjF9AC3GScWTRzRdFtZ4vZ",
-    "fuel":1000,
-    "contract":"12205bdca17463a5fbb92d461b61ec5b502ab2645c3487c94862f9b18c37bc01c118",
-    "method":"transfer",
-    "args":{"from":"QmamzDVuZqkUDwHikjHCkgJXXXXXXXVDTvTYb2aq6qfLbY","to":"#ANYACCOUNT","units":100},
-    "private_key":"Invalid3wNt6sUs4jDqgN72ZfX7XWV88GH8txjkGw4jZUhUaYrZCfTzHNPfxLSX3Qzhu5kMd9KrngyMg3ikrKUKMdTxXQ9MXqgj376at1XmgECygypDwiQf",
-}
-```
-
-### `submit_unit_tx`
-
-`$ cargo run -- --command submit_unit_tx --json '<JSON>' --url <URL>`
-`$ cargo run -- --command submit_unit_tx --hex <HEX> --url <URL>`
-`$ cargo run -- --command submit_unit_tx --bs58 <BASE58> --url <URL>` 
-
- - The `<HEX>`, `<BASE58>` `<JSON>` arguments are the same of the `create_unit_tx` functionality.
- - the `<URL>` argument is the url (comprehensive of port and path) of the Trinci Node, eg: `http://localhost:8000/api/v1`
-
- - In case of success returns the HEX of the transaction receipt, eg:
-   ```bash
-   OK|12208496dac2cd6cbb56378d12fef825c5d3a1235ebdf72de33153d6d157d8b383ba
-   ```
- - In case of error print the node answer, eg:
-   ```bash
-   KO|DuplicatedConfirmedTx
-   KO|Error reading args!
-   KO|Error sending unit tx message Error { kind: MalformedData, source: Some(KeyRejected("InvalidComponent")) }
-   ...
-   ```
-
-### MessagePack Conversion Utility: `to_message_pack`
-#### `String`
-`$ cargo run -- --command to_message_pack --string <STRING>`
-
-Example
-`$ cargo run -- --command to_message_pack --string "Hello, Trinci!"`
-
-Result:
-`[174,72,101,108,108,111,44,32,84,114,105,110,99,105,33]`
-
-
-#### `Json Structures`
-`$ cargo run -- --command to_message_pack --jsonstruct '<JSONSTRUCT>'`
-
-Example
-`$ cargo run -- --command to_message_pack --jsonstruct '{"a":1,"b":"text","c":[1,2,3]}'`
-
-Result:
-`[131,161,97,1,161,98,164,116,101,120,116,161,99,147,1,2,3]`
-## Compilation
-
-### Linux
+# Compile the dll (from windows)
 ```bash
 cargo build --release
 ```
+The compiled dll can be found in the directory `target\release\trinci_sign.dll` and needs to be copied on the `c#` project directory.
 
-### Windows from Linux
-```bash
-cargo build --release --target x86_64-pc-windows-gnu
+# **C#** usage example
+```cs
+using System.Runtime.InteropServices;
+
+// Used to convert a json string into a message packed bytes array (as string: "[110,...,123]")
+// The `text` argument must be a pointer to a valid json string: eg: "{\"name1\":\"value1\",\"name2\":123}"
+[DllImport("trinci_sign.dll")]
+static extern IntPtr convert_json_to_msgpack(IntPtr text);
+
+// Submit a transaction to a trinci endpoint
+// The `json` and `url` must be pointers to valid json and url strings
+// json : 
+//  {
+//      "target": account-id, // eg: "#ACCOUNT"
+//      "network": string,    // eg: "QmNiibPaxdU61jSUK35dRwVQYjF9AC3GScWTRzRdFtZ4vZ",
+//      "fuel": integer,      // eg: 1000
+//      "contract": string,   // eg: contract hash as base58 (could be empty)
+//      "method": string,     // "transfer",
+//      "args": json_string,  // contract_args, eg: {"arg1":123, "arg2":"account1"}
+//      "private_key": string // private key used to sign (base58)
+//  }
+// Note: this must be a valid string, so the double quotes need to be escaped: " -> \"
+[DllImport("trinci_sign.dll")]
+static extern IntPtr submit_unit_tx(IntPtr json, IntPtr url); 
+
+
+// This is used to free the memory used by the imported function to return a string
+[DllImport("trinci_sign.dll")]
+static extern void free_string();
+
+
+bool submit(Int64 units, String purpose, String data, String url, String pvt_key)
+{
+    var payment_data = "[]";
+
+    // Prepare data args
+    if (data != "")
+    {
+        IntPtr intPtr_data = Marshal.StringToHGlobalAnsi(data);
+        IntPtr data_result = convert_json_to_msgpack(intPtr_data);
+        var payment_data_tmp = Marshal.PtrToStringAnsi(data_result);
+        free_string();
+        if (payment_data_tmp != null && payment_data_tmp[0] == '[')
+        {
+            payment_data = payment_data_tmp;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    String contract_args = "{\"asset\":\"#EURS\",\"currency\":\"eur\",\"units\":" + units + ",\"purpose\":\"" + purpose + "\",\"payment_data\":" + payment_data + "}";
+    String json_text = "{\"target\":\"#EURS\",\"network\":\"QmNiibPaxdU61jSUK35dRwVQYjF9AC3GScWTRzRdFtZ4vZ\",\"fuel\":1000,\"contract\":\"\",\"method\":\"mint_from_provider\",\"args\":" + contract_args + ",\"private_key\":\"" + pvt_key + "\"}";
+
+    IntPtr intPtr_json = Marshal.StringToHGlobalAnsi(json_text);
+    IntPtr intPtr_url = Marshal.StringToHGlobalAnsi(url);
+
+    IntPtr submit_result_ptr = submit_unit_tx(intPtr_json, intPtr_url);
+    var submit_result = Marshal.PtrToStringAnsi(submit_result_ptr);
+    free_string();
+    Console.WriteLine(submit_result);
+    if (submit_result == "OK|Valid Transaction!")
+    {
+        return true;
+    }
+
+
+    return false;
+}
+
+String data = "{\"timestamp\":\"2020-05-06T10:22:15\"}";
+String purpose = "akdhvkasdvasdv:++EURS";
+Int64 units = 1242;
+
+
+// **Note**: This is a private key used only for testing purpose, don't use it in a production environment
+String pvt_key = "9XwbySgVsf1qZvErcMkdGtzDnrDVoRfL6AxQGQ35A2bnCstKZ3pve1ziT4qskoUDZQeMQ6AJZx14hrvPqZeCWw3bNf2thSkxRmuGu7XsnkMDMqJGq7hkA14DffxjQdkqQrg6Aws8SHwXzrZUkFFTL7QK9jcFsT9DHejEwLCwepjJi4MdpzFmiwLySALnMKHm6itCQK9N1HNoc4FL9MJf7mFiQaEi3oG6ufdcyTecPTkuAoi3TpTqtL1MJSDT6kuFH9B9K29yM";
+String url = "https://localhost:8000";
+
+
+if (submit(units, purpose, data, url, pvt_key) == true)
+{
+    Console.WriteLine("OK");
+}
+else
+{
+    Console.WriteLine("ERROR");
+}
+
 ```
-Note: you need to install the cross-compilation toolchain:
-
- - For Debian:
-   ```bash
-   sudo apt-get install gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64
-   ```
