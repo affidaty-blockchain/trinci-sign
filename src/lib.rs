@@ -60,14 +60,15 @@ fn store_string_on_heap(string_to_store: String) -> *mut c_char {
         RESULT_STRING_PTR = pntr;
     }
     //return the c_char
-    return pntr;
+    pntr
 }
 
 #[no_mangle]
 pub extern "C" fn free_string() {
     unsafe {
         let _ = CString::from_raw(RESULT_STRING_PTR);
-        RESULT_STRING_PTR = 0 as *mut c_char;
+        // RESULT_STRING_PTR = 0 as *mut c_char;
+        RESULT_STRING_PTR = std::ptr::null_mut::<c_char>();
     }
 }
 
@@ -114,6 +115,7 @@ fn create_unit_tx_as_vec(input_args: UnitTxArgs) -> Result<Vec<u8>> {
 }
 
 #[no_mangle]
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn convert_json_to_msgpack(input_args: *mut c_char) -> *mut c_char {
     let c_str = unsafe { CStr::from_ptr(input_args) };
     let input_args = match c_str.to_str() {
@@ -134,6 +136,7 @@ pub extern "C" fn convert_json_to_msgpack(input_args: *mut c_char) -> *mut c_cha
 }
 
 #[no_mangle]
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub extern "C" fn submit_unit_tx(input_args: *mut c_char, url: *mut c_char) -> *mut c_char {
     let c_str_args = unsafe { CStr::from_ptr(input_args) };
     let input_args = match c_str_args.to_str() {
@@ -141,7 +144,7 @@ pub extern "C" fn submit_unit_tx(input_args: *mut c_char, url: *mut c_char) -> *
         Err(_) => return store_string_on_heap("KO|bad args input".to_string()),
     };
 
-    let c_str_url = unsafe { CStr::from_ptr(input_args) };
+    let c_str_url = unsafe { CStr::from_ptr(url) };
     let url = match c_str_url.to_str() {
         Ok(val) => val.to_owned(),
         Err(_) => return store_string_on_heap("KO|bad url input".to_string()),
@@ -159,7 +162,10 @@ pub extern "C" fn submit_unit_tx(input_args: *mut c_char, url: *mut c_char) -> *
             http_channel.send(tx),
             store_string_on_heap(String::from("KO|error sending unit tx"))
         );
-        let buf = unwrap_or_return!(http_channel.recv(), String::from("KO|error on recv"));
+        let buf = unwrap_or_return!(
+            http_channel.recv(),
+            store_string_on_heap(String::from("KO|error on recv"))
+        );
 
         let output = if String::from_utf8_lossy(&buf) == *"true" {
             String::from("OK|Valid Transaction!")
@@ -168,7 +174,7 @@ pub extern "C" fn submit_unit_tx(input_args: *mut c_char, url: *mut c_char) -> *
         } else {
             let msg = unwrap_or_return!(
                 rmp_deserialize::<Message>(&buf),
-                String::from("KO|error on message deserialization")
+                store_string_on_heap(String::from("KO|error on message deserialization"))
             );
 
             match msg {
